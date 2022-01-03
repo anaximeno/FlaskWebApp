@@ -1,11 +1,21 @@
 import sqlite3
 from flask import Flask, redirect, render_template, request
 
+
 app = Flask(__name__)
 
-REGISTRANTS = {
 
-}
+def get_registrants(path: str = "database/flaskapp.db"):
+    with sqlite3.connect(path) as con:
+        cur = con.cursor()
+        data = cur.execute("SELECT * from registrants")
+    return data
+
+
+def insert_registrant(name: str, sport: str, path: str = "database/flaskapp.db"):
+    with sqlite3.connect(path) as con:
+        cur = con.cursor()
+        cur.execute("INSERT INTO registrants (name, sport) VALUES(?, ?)", (name, sport))
 
 
 SPORTS = [
@@ -33,12 +43,12 @@ def register():
     elif sport not in SPORTS:
         result = render_template("error.html", message="Invalid sport")
     else:
-        REGISTRANTS[name] = sport
-        print(REGISTRANTS)
+        insert_registrant(name, sport)
         result = redirect("/registrants")
     return result
 
 
 @app.route("/registrants")
 def registrants():
-    return render_template("registrants.html", registrants=REGISTRANTS)
+    registrants = get_registrants()
+    return render_template("registrants.html", registrants=registrants)
