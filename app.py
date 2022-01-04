@@ -1,10 +1,13 @@
 import sqlite3
-from flask import Flask, redirect, render_template, request
+from flask import Flask, redirect, render_template, request, session
 from flask_mail import Mail, Message
+from flask_session import Session
 import os
 
 app = Flask(__name__)
 app.config["MAIL_DEFAULT_SENDER"] = os.getenv("MAIL_DEFAULT_SENDER")
+app.config["SESSION_TYPE"] = "filesystem"
+Session(app)
 
 DBPATH = "database/flaskapp.db"
 
@@ -29,8 +32,24 @@ def insert_registrant(name: str, sport: str, path: str):
         cur.execute("INSERT INTO registrants (name, sport) VALUES(?, ?)", (name, sport))
 
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    if request.method == "POST":
+        session["name"] = request.form.get("name")
+        return redirect("/")
+    return render_template("login.html")
+
+
+@app.route("/logout")
+def logout():
+    session["name"] = None
+    return redirect("/")
+
+
 @app.route("/")
 def index():
+    if not session.get("name"):
+        return redirect("/login")
     return render_template("index.html", sports=SPORTS)
 
 
